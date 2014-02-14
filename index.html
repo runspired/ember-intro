@@ -276,6 +276,7 @@
 
                     renderTemplate : function () {
                         this.render('growl/notification', {outlet : 'growl'});
+                        this.render('post/single', {outlet : 'currentPost'});
                     }
 
                 });
@@ -297,30 +298,40 @@
             <script type="text/template">
                 #### Routes
                 ```javascript
-
+                WebDevDaily.FeedRoute = WebDevDaily.Route.extend({
+                model : function () {
+                return WebDevDaily.Post.FIXTURES
+                }
+                });
                 ```
             </script>
         </section>
         <section data-markdown>
             <script type="text/template">
                 #### Models
-                ```javascript
-
-                ```
+                An Instance of an Ember.Object class, e.g. an instance of WebDevDaily.Post
             </script>
             <section data-markdown>
                 <script type="text/template">
                     #### Controllers
                     ```javascript
-
+                    WebDevDaily.FeedController = Ember.Controller.extend({
+                        postsCount : function () {
+                        return this.get('model.length');
+                        }.property('model.@each')
+                    });
                     ```
                 </script>
             </section>
             <section data-markdown>
                 <script type="text/template">
-                    #### Templates
+                    #### Array Controllers
                     ```javascript
-
+                    WebDevDaily.FeedController = Ember.ArrayController.extend({
+                        postsCount : function () {
+                        return this.get('model.length');
+                        }.property('model.@each')
+                    });
                     ```
                 </script>
             </section>
@@ -328,7 +339,36 @@
                 <script type="text/template">
                     #### Views
                     ```javascript
-
+                    WebDevDaily.FeedView = WebDevDaily.skrollrView.extend({
+                        templateName : 'feed.list'
+                    });
+                    ```
+                </script>
+            </section>
+            <section data-markdown>
+                <script type="text/template">
+                    #### Application Template
+                    ```javascript
+                    {{outlet}}
+                    {{currentPost}}
+                    {{growl}}
+                    ```
+                </script>
+            </section>
+            <section data-markdown>
+                <script type="text/template">
+                    #### Templates
+                    template: feed/list
+                    ```
+                        <h1>Posts {{postsCount}}</h1>
+                        <ul>
+                            {{#each model as post}}
+                                {{#link-to "feed.single" post tagName="li"}}
+                                    <h2>{{post.title}}</h2>
+                                    <p>{{post.preview}}</p>
+                                {{/link-to}}
+                            {{/each}}
+                        </ul>
                     ```
                 </script>
             </section>
@@ -344,7 +384,22 @@
                 <script type="text/template">
                     #### Mixins
                     ```javascript
+                    App.Editable = Ember.Mixin.create({
+                        edit: function() {
+                            console.log('starting to edit');
+                            this.set('isEditing', true);
+                        },
+                        isEditing: false
+                    });
 
+                    // Mix mixins into classes by passing them as the first arguments to
+                    // .extend.
+                    App.CommentView = Ember.View.extend(App.Editable, {
+                    template: Ember.Handlebars.compile('{{#if view.isEditing}}...{{else}}...{{/if}}')
+                    });
+
+                    commentView = App.CommentView.create();
+                    commentView.edit(); // outputs 'starting to edit'
                     ```
                 </script>
             </section>
@@ -352,58 +407,48 @@
                 <script type="text/template">
                     #### Dependency Injection
                     ```javascript
-
+                    var App = Ember.Application.create({
+                        ready: function(){
+                            this.register('session:current', App.Session, {singleton: true});
+                            this.inject('controller', 'session', 'session:current');
+                        }
+                    });
                     ```
+                </script>
+            </section>
+            <section data-markdown>
+                <script type="text/template">
+                    #### Object Proxies
                 </script>
             </section>
         </section>
 
     </section>
 
+    <!-- how it all fits together -->
     <section>
-        <section>
-            <h3>Putting it all together</h3>
-        </section>
-        <section data-markdown>
-            <script type="text/template">
-                #### Route
-                ```javascript
-                WebDevDaily.FeedRoute = WebDevDaily.Route.extend({
-                    model : function () {
-                        return WebDevDaily.Post.FIXTURES
-                    }
-                });
-                ```
-            </script>
-        </section>
-        <section data-markdown>
-            <script type="text/template">
-                #### Controller
-                ```javascript
-                WebDevDaily.FeedController = Ember.Controller.extend({
-                    postsCount : function () {
-                        return this.get('model.length');
-                    }.property('model.@each')
-                });
-                ```
-            </script>
-        </section>
-        <section data-markdown>
-            <script type="text/template">
-                #### View
-                ```javascript
-                WebDevDaily.FeedView = WebDevDaily.skrollrView.extend({
-                    templateName : 'feed.list'
-                });
-                ```
-            </script>
-        </section>
+        <img src="http://samhuri.net/f/ember-structure.png">
     </section>
 
-    <!-- Promises & Hooks -->
+    <!-- Actions & Promises & Hooks -->
     <section>
         <section>
-            <h3>Promises & Hooks</h3>
+            <h3>Actions</h3>
+        </section>
+        <section>
+            <h3>Promises</h3>
+        </section>
+        <section>
+            <h3>Hooks</h3>
+            <ul>
+                <li>init</li>
+                <li>didInsertElement</li>
+                <li>beforeModel, model, afterModel</li>
+                <li>enter</li>
+                <li>setupController</li>
+                <li>this._super()</li>
+                <li>ready</li>
+            </ul>
         </section>
     </section>
 
