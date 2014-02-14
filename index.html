@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ember</title>
+    <script type="text/javascript" src="http://lab.hakim.se/reveal-js/js/reveal.min.js"></script>
+    <script type="text/javascript" src="http://lab.hakim.se/reveal-js/lib/js/head.min.js"></script>
+    <link rel="stylesheet" href="http://lab.hakim.se/reveal-js/lib/css/zenburn.css">
+    <link rel="stylesheet" href="http://lab.hakim.se/reveal-js/css/theme/default.css">
+    <link rel="stylesheet" href="http://lab.hakim.se/reveal-js/css/reveal.min.css">
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+    <section>
+        <h1>Ember | The Good Parts</h1>
+    </section>
+
+    <!-- Ember Overview-->
+    <section>
+        <section>
+            <h3>What is Ember?</h3>
+            <ul>
+                <li class="fragment">Javascript MVC Framework</li>
+                <li class="fragment">An Application Toolbox</li>
+            </ul>
+        </section>
+        <section>
+            <h3>Client Side Applications</h3>
+            <ul>
+                <li>The Ultimate in Dynamic Content</li>
+                <li>API Consumption</li>
+                <li>Single Page Applications</li>
+                <li>MVC</li>
+            </ul>
+        </section>
+        <section>
+            <h3>A Little History</h3>
+            <ul>
+                <li>SproutCore 2.0</li>
+                <li>Separate Markup</li>
+            </ul>
+        </section>
+    </section>
+
+    <!-- Object Model -->
+    <section>
+        <section>
+            <h3>The Ember Object Model</h3>
+            <ul>
+                <li>Observers</li>
+                <li>Computed Properties</li>
+                <li>Extensible</li>
+            </ul>
+        </section>
+        <section data-markdown>
+            <script type="text/template">
+                #### Named Objects
+                ```javascript
+                WebDevDaily.Post = Ember.Object.extend({
+                    title : '',
+                    preview : '',
+                    images : [],
+                    content : '',
+                    comments : []
+                });
+                ```
+            </script>
+        </section>
+        <section data-markdown>
+            <script type="text/template">
+                #### Computed Properties
+                ```javascript
+                WebDevDaily.Post = Ember.Object.extend({
+                    ...
+                    preview : function () {
+                        var content = this.get('content'),
+                            length = content.length;
+
+                        return (length > 140) ? content.substr(0, 137) + '...' : content;
+
+                    }.property('content'),
+                    ...
+                });
+
+                ```
+            </script>
+        </section>
+        <section data-markdown>
+            <script type="text/template">
+                #### Observers
+                ```javascript
+                WebDevDaily.Post = Ember.Object.extend({
+                    ...
+                    triggerCommentChange : function () {
+                        ;//do something
+                    }.observes('comments.@each'),
+                    ...
+                });
+
+                ```
+            </script>
+        </section>
+        <section data-markdown>
+            <script type="text/template">
+                #### Cacheable
+                Computed Properties are cached by default and only recomputed when the properties they observe change.  Calling .volatile() will turn off caching for the property.
+                ```javascript
+                WebDevDaily.Post = Ember.Object.extend({
+                ...
+                    preview : function () {
+                    var content = this.get('content'),
+                    length = content.length;
+
+                    return (length > 140) ? content.substr(0, 137) + '...' : content;
+
+                    }.property('content').volatile(),
+                    ...
+                });
+
+                ```
+            </script>
+        </section>
+        <section data-markdown>
+            <script type="text/template">
+                #### readOnly
+                Computed readOnly Properties don't accept a value
+                ```javascript
+                WebDevDaily.Post = Ember.Object.extend({
+                ...
+                preview : function () {
+                var content = this.get('content'),
+                length = content.length;
+
+                return (length > 140) ? content.substr(0, 137) + '...' : content;
+
+                }.property('content').readOnly(),
+                ...
+                });
+
+                ```
+            </script>
+        </section>
+        <section data-markdown>
+            <script type="text/template">
+                #### readOnly
+                Without readOnly, we could do something like this
+                ```javascript
+                WebDevDaily.Post = Ember.Object.extend({
+                ...
+                authorName : function (key, value, oldValue) {
+                    //setter
+                    if (arguments.length > 1) {
+                        var nameParts = value.split(/\s+/);
+                        this.set('authorFirstname', nameParts[0]);
+                        this.set('authorLastname',  nameParts[1]);
+                    }
+
+                    //getter
+                    return this.get('authorFirstname') + ' ' + this.get('authorLastname');
+
+                }.property('content'),
+                ...
+                });
+
+                ```
+            </script>
+        </section>
+    </section>
+
+    <!-- App Setup and Extending Route-->
+    <section>
+        <section>
+            <h3>Setting up an app</h3>
+        </section>
+        <section data-markdown>
+            <script type="text/template">
+                #### Defining your App
+                ```javascript
+                var WebDevDaily = window.WebDevDaily = Ember.Application.create({
+                    LOG_TRANSITIONS: true,
+                    LOG_BINDINGS: true,
+                    LOG_VIEW_LOOKUPS: true,
+                    LOG_STACKTRACE_ON_DEPRECATION: true,
+                    LOG_VERSION: true,
+                    debugMode: true,
+                    ready: function () {
+                        //remove the loading screen
+                        Ember.$("#loading").remove();
+                    }
+                });
+                ```
+            </script>
+        </section>
+        <section data-markdown>
+            <script type="text/template">
+                #### Delaying Readiness
+                ```javascript
+                WebDevDaily.deferReadiness();
+                ```
+            </script>
+        </section>
+
+        <section>
+            <h3>Routes</h3>
+            <ul>
+                <li class="fragment">1:1 With URLs</li>
+                <li class="fragment">Does not constrain the URL</li>
+                <li class="fragment">Query Params</li>
+            </ul>
+        </section>
+        <section data-markdown>
+            <script type="text/template">
+                #### Defining your Router
+                ```javascript
+                WebDevDaily.Router.map(function () {
+
+                    this.route('session');
+                    this.resource('feed', {path : '/'}, function () {
+                        this.route('single', { path : '/:feed_id' });
+                    });
+
+                });
+                ```
+            </script>
+        </section>
+        <section data-markdown>
+            <script type="text/template">
+                #### Everything is an Ember Object
+                Here, I'm extending Ember's Route object for use later
+                ```javascript
+                WebDevDaily.Route = Ember.Route.extend({
+                    enter: function () {
+                        this._super();
+                        window.scrollTo(0, 0);
+                    }
+                });
+                ```
+            </script>
+        </section>
+        <section data-markdown>
+            <script type="text/template">
+                #### And Extending it again
+                ```javascript
+                WebDevDaily.AuthenticatedRoute = WebDevDaily.Route.extend({
+                    beforeModel : function (transition) {
+
+                        var sessionController = this.controllerFor('session');
+
+                        //ensure unnecessary ajax requests are aborted
+                        //this.get('store').adapterFor(WebDevDaily.Address).abortAll();
+
+                        if (!sessionController.get('isLoggedIn')) {
+                            sessionController.set('attemptedTransition', transition);
+                            this.transitionTo('session');
+                        }
+
+                    }
+                });
+                ```
+            </script>
+        </section>
+    </section>
+
+    <!-- Anatomy of An App -->
+    <section>
+        <section>
+            <h2>Anatomy of An Ember App</h2>
+        </section>
+        <section data-markdown>
+            <script type="text/template">
+                #### Freebies
+                ```javascript
+                WebDevDaily.ApplicationController = Ember.ArrayController.extend({
+
+                    needs : ['session'],
+
+                    renderTemplate : function () {
+                        this.render('growl/notification', {outlet : 'growl'});
+                        this.render('post/single', {outlet : 'currentPost'});
+                    }
+
+                });
+
+                WebDevDaily.ApplicationRoute = App.Route.extend({
+
+                    actions : {
+
+                        logout : function () {
+                            this.controllerFor('session').logout();
+                        }
+                    }
+
+                });
+                ```
+            </script>
+        </section>
+        <section data-markdown>
+            <script type="text/template">
+                #### Routes
+                ```javascript
+                WebDevDaily.FeedRoute = WebDevDaily.Route.extend({
+                model : function () {
+                return WebDevDaily.Post.FIXTURES
+                }
+                });
+                ```
+            </script>
+        </section>
+        <section data-markdown>
+            <script type="text/template">
+                #### Models
+                An Instance of an Ember.Object class, e.g. an instance of WebDevDaily.Post
+            </script>
+            <section data-markdown>
+                <script type="text/template">
+                    #### Controllers
+                    ```javascript
+                    WebDevDaily.FeedController = Ember.Controller.extend({
+                        postsCount : function () {
+                        return this.get('model.length');
+                        }.property('model.@each')
+                    });
+                    ```
+                </script>
+            </section>
+            <section data-markdown>
+                <script type="text/template">
+                    #### Array Controllers
+                    ```javascript
+                    WebDevDaily.FeedController = Ember.ArrayController.extend({
+                        postsCount : function () {
+                        return this.get('model.length');
+                        }.property('model.@each')
+                    });
+                    ```
+                </script>
+            </section>
+            <section data-markdown>
+                <script type="text/template">
+                    #### Views
+                    ```javascript
+                    WebDevDaily.FeedView = WebDevDaily.skrollrView.extend({
+                        templateName : 'feed.list'
+                    });
+                    ```
+                </script>
+            </section>
+            <section data-markdown>
+                <script type="text/template">
+                    #### Application Template
+                    ```javascript
+                    {{outlet}}
+                    {{currentPost}}
+                    {{growl}}
+                    ```
+                </script>
+            </section>
+            <section data-markdown>
+                <script type="text/template">
+                    #### Templates
+                    template: feed/list
+                    ```
+                        <h1>Posts {{postsCount}}</h1>
+                        <ul>
+                            {{#each model as post}}
+                                {{#link-to "feed.single" post tagName="li"}}
+                                    <h2>{{post.title}}</h2>
+                                    <p>{{post.preview}}</p>
+                                {{/link-to}}
+                            {{/each}}
+                        </ul>
+                    ```
+                </script>
+            </section>
+            <section data-markdown>
+                <script type="text/template">
+                    #### Components
+                    ```javascript
+
+                    ```
+                </script>
+            </section>
+            <section data-markdown>
+                <script type="text/template">
+                    #### Mixins
+                    ```javascript
+                    App.Editable = Ember.Mixin.create({
+                        edit: function() {
+                            console.log('starting to edit');
+                            this.set('isEditing', true);
+                        },
+                        isEditing: false
+                    });
+
+                    // Mix mixins into classes by passing them as the first arguments to
+                    // .extend.
+                    App.CommentView = Ember.View.extend(App.Editable, {
+                    template: Ember.Handlebars.compile('{{#if view.isEditing}}...{{else}}...{{/if}}')
+                    });
+
+                    commentView = App.CommentView.create();
+                    commentView.edit(); // outputs 'starting to edit'
+                    ```
+                </script>
+            </section>
+            <section data-markdown>
+                <script type="text/template">
+                    #### Dependency Injection
+                    ```javascript
+                    var App = Ember.Application.create({
+                        ready: function(){
+                            this.register('session:current', App.Session, {singleton: true});
+                            this.inject('controller', 'session', 'session:current');
+                        }
+                    });
+                    ```
+                </script>
+            </section>
+            <section data-markdown>
+                <script type="text/template">
+                    #### Object Proxies
+                </script>
+            </section>
+        </section>
+
+    </section>
+
+    <!-- how it all fits together -->
+    <section>
+        <img src="http://samhuri.net/f/ember-structure.png">
+    </section>
+
+    <!-- Actions & Promises & Hooks -->
+    <section>
+        <section>
+            <h3>Actions</h3>
+        </section>
+        <section>
+            <h3>Promises</h3>
+        </section>
+        <section>
+            <h3>Hooks</h3>
+            <ul>
+                <li>init</li>
+                <li>didInsertElement</li>
+                <li>beforeModel, model, afterModel</li>
+                <li>enter</li>
+                <li>setupController</li>
+                <li>this._super()</li>
+                <li>ready</li>
+            </ul>
+        </section>
+    </section>
+
+    <!-- HTMLBars -->
+    <section>
+        <section>
+            <h3>Handlebars</h3>
+        </section>
+        <section>
+            <h3>Metamorph</h3>
+        </section>
+        <section>
+            <h3>HTMLBars</h3>
+            <p>The near future of Web Templating</p>
+        </section>
+    </section>
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+<script type="text/javascript">
+    Reveal.initialize({
+
+        // Display controls in the bottom right corner
+        controls: true,
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: false,
+
+        // Push each slide change to the browser history
+        history: false,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Vertical centering of slides
+        center: true,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // Hides the address bar on mobile devices
+        hideAddressBar: true,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style
+        transition: 'default', // default/cube/page/concave/zoom/linear/fade/none
+
+        // Transition speed
+        transitionSpeed: 'default', // default/fast/slow
+
+        // Transition style for full page slide backgrounds
+        backgroundTransition: 'default', // default/none/slide/concave/convex/zoom
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Parallax background image
+        parallaxBackgroundImage: '', // e.g. "'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg'"
+
+        // Parallax background size
+        parallaxBackgroundSize: '', // CSS syntax, e.g. "2100px 900px"
+
+        dependencies: [
+
+            // Interpret Markdown in <section> elements
+            { src: 'http://lab.hakim.se/reveal-js/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+            { src: 'http://lab.hakim.se/reveal-js/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+
+            // Syntax highlight for <code> elements
+            { src: 'http://lab.hakim.se/reveal-js/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+
+        ]
+    });
+</script>
+</body>
